@@ -57,11 +57,11 @@ CONSTANT: min-mississippi-count 1
 
 :: announce-nonstandard-mississippi ( terminal sip -- )
     {
-        { .3  [ ] }
-        { .1  [ announce-random-sip ] }
+        { .3   [ ] }
+        { .1   [ announce-random-sip ] }
         { .075 [ announce-random-stupid-word ] }
         { .025 [ terminal announce-fake-terminal ] }
-        { .5  [ sip announce-sip ] }
+        { .5   [ sip announce-sip ] }
     } casep ;
 
 : announce-nonstandard-mississippis ( terminal -- )
@@ -78,6 +78,3 @@ CONSTANT: min-mississippi-count 1
     dup valid-mississippi-count?
     [ announce-go! swap announce-mississippis ]
     [ 2drop random-no-word announce ] if ;
-
-: <heartbeat-response> ( -- response )
-    "mississippis" <text-content> ;
