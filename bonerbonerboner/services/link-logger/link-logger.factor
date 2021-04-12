@@ -1,8 +1,8 @@
 ! Copyright (C) 2020 .
 ! See http://factorcode.org/license.txt for BSD license.
 
-USING: kernel sequences http http.server.dispatchers accessors vocabs.parser furnace.actions regexp db.types db.tuples math urls strings calendar ;
-USING: bonerbonerboner ;
+USING: kernel sequences http http.server.dispatchers accessors vocabs.parser furnace.actions regexp db.types db.tuples math urls strings calendar assocs arrays formatting combinators.random ;
+USING: bonerbonerboner.services bonerbonerboner.services.slack ;
 
 IN: bonerbonerboner.services.link-logger
 
@@ -32,10 +32,17 @@ link "links"
     [ dup repost-count>> 1 + >>repost-count ] dip >>updated-by now >>date-updated ;
 
 : add-link ( url who -- )
-    [ <link> insert-tuple ] with-bbb-db ;
+    ensure-link-logger [ <link> insert-tuple ] with-bbb-db ;
+
+: random-callout ( repost -- )
+    {
+        [ ]
+        [ created-by>> "%s already posted that" sprintf ]
+        [ drop "nice repost" ]
+    } call-random say-slack ;
 
 : update-repost ( link who -- )
-     [ <repost> update-tuple ] with-bbb-db ;
+    ensure-link-logger [ <repost> dup update-tuple ] with-bbb-db random-callout ;
 
 : repost? ( url -- link/f )
     link new swap >>url [ select-tuple ] with-bbb-db ;
@@ -47,7 +54,11 @@ link "links"
     url-regex all-matching-subseqs ;
 
 : check-repost ( url who -- )
-    [ dup repost? ] dip swap [  update-repost ] [ add-link ] if ;
+    [ dup repost? ] dip swap [  swap update-repost drop ] [ add-link ] if* ;
 
-! : check-links ( str -- )
- !   strip-urls [ check-repost ] each ;
+: check-link ( url who -- )
+    check-repost ;
+
+: check-links ( event -- )
+    [ "text" of strip-urls dup length ] [ "user" of ] bi <array>
+    [ check-link ] 2each ;

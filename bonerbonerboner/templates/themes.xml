@@ -1,8 +1,10 @@
 <?xml version='1.0' ?>
 <t:chloe xmlns:t="http://factorcode.org/chloe/1.0" >
-    <html class="@theme" >
+    <html class="@theme" lang="en" >
         <head>
+          <title>boners</title>
             <meta name="viewport" content="width=device-width, initial-sale=1"/>
+            <link rel="stylesheet"  type="text/css" href="https://static.bonerbonerboner.com/css/bbb.css" />
         </head>
         <body/>
     </html>

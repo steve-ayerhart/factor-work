@@ -1,8 +1,8 @@
 ! Copyright (C) 2020 .
 ! See http://factorcode.org/license.txt for BSD license.
 
-USING: io.sockets.secure kernel http http.server http.server.dispatchers accessors furnace.actions namespaces http.server.responses io.servers io.sockets.secure.debug json.reader assocs combinators sequences arrays threads locals formatting json.writer urls http.client hashtables ;
-USING: prettyprint ;
+USING: io.sockets.secure kernel http http.server http.server.dispatchers accessors furnace.actions namespaces http.server.responses io.servers io.sockets.secure.debug json.reader assocs combinators sequences arrays threads locals formatting json.writer urls http.client hashtables math ;
+USING: prettyprint io.encodings.utf8 io io.files ;
 
 IN: bonerbonerboner.services.slack
 
@@ -10,17 +10,11 @@ SYMBOLS: slack-callbacks current-slack-webhook-url current-slack-authorization-t
 
 TUPLE: slack < dispatcher ;
 
-: add-slack-handler ( quot: ( event -- ) -- )
-    slack-callbacks get append slack-callbacks set ;
-
 : <bad-callback-response> ( -- response )
     "400" "unrecognized event type" <trivial-response> ;
 
 : <heartbeat-response> ( -- response )
     "slack" <text-content> ;
-
-: <ok-response> ( -- response )
-    "200" "OK" <trivial-response> ;
 
 : handle-challenge ( json -- response )
     "challenge" of <text-content> ;
@@ -31,7 +25,7 @@ TUPLE: slack < dispatcher ;
         slack-callbacks get length slack-event <array>
         slack-callbacks get [ curry "Slack Callback" spawn drop ] 2each
     ] unless
-    <ok-response> ;
+    <200> ;
 
 : <slack-event-action> ( -- action )
     <action>
@@ -40,13 +34,20 @@ TUPLE: slack < dispatcher ;
         "type" of
         {
             { "url_verification" [ handle-challenge ] }
-            { "event_callback" [ handle-slack-event ] }
+            { "event_callback" [ "event" of handle-slack-event ] }
             [ drop <bad-callback-response> ]
         } case
     ] >>submit ;
 
-: <heartbeat-action> ( -- action )
-    <action> [ <heartbeat-response> ] >>display ;
+: slack-lookup-user ( id -- name )
+    [
+        "https://slack.com/api/users.profile.get" >url
+        { "user" "token" }
+    ] dip
+    current-slack-authorization-token get 2array zip
+    set-query-params
+    http-get swap drop json>
+    "profile" of "real_name" of ;
 
 : slack-post-message ( payload -- )
     >json
@@ -55,10 +56,6 @@ TUPLE: slack < dispatcher ;
     http-request 2drop ;
 
 : say-slack ( str -- )
-    "text" associate
-    slack-post-message ;
-
-: <slack> ( -- responder )
-    slack new-dispatcher
-    <slack-event-action> "slack-events" add-responder
-    <heartbeat-action> "heartbeat" add-responder ;
+    . flush ;
+!    "text" associate
+!    slack-post-message ;

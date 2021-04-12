@@ -1,7 +1,7 @@
 ! Copyright (C) 2020 .
 ! See http://factorcode.org/license.txt for BSD license.
 USING: kernel regexp sequences http.server http.server.responses db db.types db.tuples unicode formatting assocs ;
-USING: bonerbonerboner bonerbonerboner.services.slack ;
+USING: bonerbonerboner.services bonerbonerboner.services.slack ;
 
 IN: bonerbonerboner.services.platzisms
 
@@ -20,6 +20,7 @@ platzism "platzisms"
     [ f ] dip platzism boa ;
 
 : add-platzism ( str -- )
+    ensure-platzisms
     [ <platzism> insert-tuple ] with-bbb-db ;
 
 : platzism-exists? ( str -- ? )
@@ -32,6 +33,7 @@ platzism "platzisms"
     R/ ^steve platz is currently .+/i matches? ;
 
 : random-platzism ( -- platzism )
+    ensure-platzisms
     "SELECT quote from platzisms ORDER BY RANDOM() LIMIT 1" [ sql-query ] with-bbb-db
     dup empty? [ drop "I'm not sure what Platz is up to." ] [ first first ] if ;
 
@@ -55,7 +57,7 @@ platzism "platzisms"
 : check-platz ( event -- )
     "text" of
     [ is-platz? [ share-platzism ] when ]
-    [ is-platzism? [ log/confirm-platzism ] when* ] bi ;
+    [ dup is-platzism? [ log/confirm-platzism ] [ drop ] if  ] bi ;
 
-[ check-platz ] add-slack-handler
+! [ check-platz ] add-slack-handler
 
